@@ -34,7 +34,7 @@ export default function TextForm(props) {
       if(!isNaN(text[i]) && text[i]!==' ')
         c=c+1;
     }
-    setprev('Nummber of digits :'+c);
+    setprev('Number of digits :'+c);
    }
 
    const countspecial = ()=>

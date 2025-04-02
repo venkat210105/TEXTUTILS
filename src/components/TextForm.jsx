@@ -6,7 +6,6 @@ import TextActions from './TextActions';
 import TextSummary from './TextSummary';
 import WordDocumentReader from './WordDocumentReader';
 import { jsPDF } from 'jspdf';
-//import * as mammoth from 'mammoth';
 import PdfHandler from './PdfHandler';
 import './TextForm.css';
 
@@ -21,6 +20,7 @@ const TextForm = ({ heading, mode, showAlert }) => {
   
   // Refs
   const textAreaRef = useRef(null);
+  const pdfHandlerRef = useRef(null);
 
   // Memoized calculations
   const wordCount = useMemo(() => text.trim() ? text.trim().split(/\s+/).length : 0, [text]);
@@ -60,7 +60,7 @@ const TextForm = ({ heading, mode, showAlert }) => {
     setAdditionalInfo(`Found ${count} digits`);
     showAlert(`Found ${count} digits`, 'info');
   };
-
+  
   const handleCountSpecialChars = () => {
     const count = (text.match(/[^\w\s]/g) || []).length;
     setAdditionalInfo(`Found ${count} special characters`);
@@ -128,24 +128,30 @@ const TextForm = ({ heading, mode, showAlert }) => {
     }
   };
   
-  //Convert text to word or pdf
+  // Export to PDF with image preservation if possible
   const handleExportPDF = () => {
     if (!text.trim()) {
       showAlert('No text to export', 'warning');
       return;
     }
-  
-    setIsProcessing(true);
-    try {
-      const doc = new jsPDF();
-      doc.text(text, 10, 10);
-      doc.save('text-export.pdf');
-      showAlert('PDF exported successfully!', 'success');
-    } catch (error) {
-      console.error('PDF export error:', error);
-      showAlert('Failed to export PDF', 'danger');
-    } finally {
-      setIsProcessing(false);
+
+    // If we have access to the PdfHandler's exportModifiedPdf method, use it
+    if (pdfHandlerRef.current && typeof pdfHandlerRef.current.exportModifiedPdf === 'function') {
+      pdfHandlerRef.current.exportModifiedPdf(text);
+    } else {
+      // Fall back to simple text-only PDF export
+      setIsProcessing(true);
+      try {
+        const doc = new jsPDF();
+        doc.text(text, 10, 10);
+        doc.save('text-export.pdf');
+        showAlert('PDF exported successfully!', 'success');
+      } catch (error) {
+        console.error('PDF export error:', error);
+        showAlert('Failed to export PDF', 'danger');
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
   
@@ -174,7 +180,6 @@ const TextForm = ({ heading, mode, showAlert }) => {
     }
   };
   
-
   const handleCapitalize = () => {
     const capitalizedText = text.replace(/\b\w/g, (char) => char.toUpperCase());
     setText(capitalizedText);
@@ -192,6 +197,7 @@ const TextForm = ({ heading, mode, showAlert }) => {
       />
 
       <PdfHandler 
+        ref={pdfHandlerRef}
         onTextExtracted={handlePdfText} 
         mode={mode} 
       />

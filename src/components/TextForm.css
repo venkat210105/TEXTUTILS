@@ -285,4 +285,35 @@
     flex-direction: column;
     gap: 0.5rem;
   }
+
+  .btn-success {
+    background-color: #198754;
+    color: white;
+  }
+  
+  .btn-success:hover:not(:disabled) {
+    background-color: #157347;
+  }
+  
+  .dark-mode .btn-success {
+    background-color: #157347;
+  }
+  
+  .dark-mode .btn-success:hover:not(:disabled) {
+    background-color: #198754;
+  }
+
+  /* Add to your existing file uploader styles */
+.file-uploader {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 2px dashed #ced4da;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dark-mode .file-uploader {
+  border-color: #6c757d;
+}
+
 }

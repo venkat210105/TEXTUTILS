@@ -5,6 +5,9 @@ import SearchReplace from './SearchReplace';
 import TextActions from './TextActions';
 import TextSummary from './TextSummary';
 import WordDocumentReader from './WordDocumentReader';
+import { jsPDF } from 'jspdf';
+import * as mammoth from 'mammoth';
+import PdfHandler from './PdfHandler';
 import './TextForm.css';
 
 const TextForm = ({ heading, mode, showAlert }) => {
@@ -44,6 +47,12 @@ const TextForm = ({ heading, mode, showAlert }) => {
     setText('');
     setAdditionalInfo('');
     showAlert('Text cleared!', 'success');
+  };
+
+  //import pdf
+  const handlePdfText = (extractedText, filename) => {
+    setText(extractedText);
+    showAlert(`Loaded PDF: ${filename}`, 'success');
   };
 
   const handleCountDigits = () => {
@@ -119,6 +128,53 @@ const TextForm = ({ heading, mode, showAlert }) => {
     }
   };
   
+  //Convert text to word or pdf
+  const handleExportPDF = () => {
+    if (!text.trim()) {
+      showAlert('No text to export', 'warning');
+      return;
+    }
+  
+    setIsProcessing(true);
+    try {
+      const doc = new jsPDF();
+      doc.text(text, 10, 10);
+      doc.save('text-export.pdf');
+      showAlert('PDF exported successfully!', 'success');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      showAlert('Failed to export PDF', 'danger');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleExportWord = () => {
+    if (!text.trim()) {
+      showAlert('No text to export', 'warning');
+      return;
+    }
+  
+    setIsProcessing(true);
+    try {
+      const html = `<html><body>${text.replace(/\n/g, '<br>')}</body></html>`;
+      const blob = new Blob([html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'text-export.doc';
+      a.click();
+      URL.revokeObjectURL(url);
+      showAlert('Word document exported!', 'success');
+    } catch (error) {
+      console.error('Word export error:', error);
+      showAlert('Failed to export Word document', 'danger');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+
   const handleCapitalize = () => {
     const capitalizedText = text.replace(/\b\w/g, (char) => char.toUpperCase());
     setText(capitalizedText);
@@ -132,6 +188,11 @@ const TextForm = ({ heading, mode, showAlert }) => {
       {/* Add WordDocumentReader here */}
       <WordDocumentReader 
         onTextExtracted={handleWordDocumentText} 
+        mode={mode} 
+      />
+
+      <PdfHandler 
+        onTextExtracted={handlePdfText} 
         mode={mode} 
       />
       
@@ -160,6 +221,8 @@ const TextForm = ({ heading, mode, showAlert }) => {
         onCapitalize={handleCapitalize}
         onClear={handleClearText}
         onCountDigits={handleCountDigits}
+        onExportPDF={handleExportPDF}
+        onExportWord={handleExportWord}
         onCountSpecialChars={handleCountSpecialChars}
         hasText={text.length > 0}
         mode={mode}

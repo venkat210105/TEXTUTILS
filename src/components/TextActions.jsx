@@ -4,10 +4,12 @@ import PropTypes from 'prop-types';
 const TextActions = ({
   onUppercase,
   onLowercase,
-  onCapitalize,  // Add this prop
+  onCapitalize,
   onClear,
   onCountDigits,
   onCountSpecialChars,
+  onExportPDF,
+  onExportWord,
   hasText,
   mode
 }) => {
@@ -28,7 +30,6 @@ const TextActions = ({
         >
           Lowercase
         </button>
-        {/* Add the Capitalize button */}
         <button 
           className={`btn btn-primary ${mode === 'dark' ? 'dark' : ''}`}
           onClick={onCapitalize}
@@ -61,19 +62,31 @@ const TextActions = ({
           Count Special
         </button>
       </div>
+
+      <div className="btn-group">
+        <button 
+          className={`btn btn-success ${mode === 'dark' ? 'dark' : ''}`}
+          onClick={onExportPDF}
+          disabled={!hasText}
+        >
+          Export PDF
+        </button>
+        <button 
+          className={`btn btn-success ${mode === 'dark' ? 'dark' : ''}`}
+          onClick={onExportWord}
+          disabled={!hasText}
+        >
+          Export Word
+        </button>
+      </div>
     </div>
   );
 };
 
 TextActions.propTypes = {
-  onUppercase: PropTypes.func.isRequired,
-  onLowercase: PropTypes.func.isRequired,
-  onCapitalize: PropTypes.func.isRequired,  // Add this prop type
-  onClear: PropTypes.func.isRequired,
-  onCountDigits: PropTypes.func.isRequired,
-  onCountSpecialChars: PropTypes.func.isRequired,
-  hasText: PropTypes.bool.isRequired,
-  mode: PropTypes.oneOf(['light', 'dark']).isRequired
+  // ... existing prop types
+  onExportPDF: PropTypes.func.isRequired,
+  onExportWord: PropTypes.func.isRequired,
 };
 
 export default TextActions;

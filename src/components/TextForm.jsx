@@ -6,7 +6,7 @@ import TextActions from './TextActions';
 import TextSummary from './TextSummary';
 import WordDocumentReader from './WordDocumentReader';
 import { jsPDF } from 'jspdf';
-import * as mammoth from 'mammoth';
+//import * as mammoth from 'mammoth';
 import PdfHandler from './PdfHandler';
 import './TextForm.css';
 

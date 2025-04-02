@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import * as mammoth from 'mammoth';
 import PropTypes from 'prop-types';
 import './WordDocumentReader.css'
+
 const WordDocumentReader = ({ onTextExtracted, mode }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [progress, setProgress] = useState(0);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -18,21 +20,88 @@ const WordDocumentReader = ({ onTextExtracted, mode }) => {
 
     setIsProcessing(true);
     setFileName(file.name);
+    setProgress(10);
 
     try {
       const arrayBuffer = await readFileAsArrayBuffer(file);
-      const result = await mammoth.extractRawText({ arrayBuffer });
+      setProgress(30);
       
-      if (result.value) {
-        onTextExtracted(result.value, file.name);
-      } else {
-        throw new Error('Document appears to be empty');
+      // Validate DOCX file format (if applicable)
+      if (file.name.endsWith('.docx')) {
+        try {
+          // Check for DOCX signature (PK zip header)
+          const header = new Uint8Array(arrayBuffer.slice(0, 4));
+          const docxSignature = [0x50, 0x4B, 0x03, 0x04]; // PK zip header
+          if (!header.every((val, i) => val === docxSignature[i])) {
+            throw new Error('The document appears to be corrupted or not a valid DOCX file');
+          }
+        } catch (validationError) {
+          console.error('DOCX validation error:', validationError);
+          throw new Error('Invalid or corrupted DOCX file');
+        }
       }
+      
+      setProgress(50);
+      
+      // Enhanced options for mammoth
+      const options = {
+        convertImage: mammoth.images.dataUri,
+        ignoreEmptyParagraphs: true,
+        styleMap: [
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "r[style-name='Strong'] => strong"
+        ]
+      };
+      
+      const result = await mammoth.extractRawText({ 
+        arrayBuffer,
+        ...options
+      });
+      
+      setProgress(80);
+      
+      // Check for warnings
+      if (result.messages && result.messages.length > 0) {
+        console.warn('Document conversion warnings:', result.messages);
+        
+        // Check for specific warning types
+        const hasEncryptionWarning = result.messages.some(
+          msg => msg.message && msg.message.includes('encrypted')
+        );
+        
+        if (hasEncryptionWarning) {
+          throw new Error('This document appears to be password-protected or encrypted');
+        }
+      }
+      
+      if (!result.value || !result.value.trim()) {
+        throw new Error('Document appears to be empty or content could not be extracted');
+      }
+      
+      setProgress(100);
+      onTextExtracted(result.value, file.name);
     } catch (error) {
       console.error('Error reading Word document:', error);
-      alert(`Error reading document: ${error.message}`);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Error reading document';
+      
+      if (error.message.includes('password') || error.message.includes('encrypted')) {
+        errorMessage = 'Cannot read password-protected document';
+      } else if (error.message.includes('corrupted')) {
+        errorMessage = 'The document appears to be corrupted';
+      } else if (error.message.includes('empty')) {
+        errorMessage = 'Document appears to be empty or content could not be extracted';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
+      setProgress(0);
       e.target.value = ''; // Reset input
     }
   };
@@ -50,7 +119,15 @@ const WordDocumentReader = ({ onTextExtracted, mode }) => {
     <div className={`word-uploader ${mode === 'dark' ? 'dark-mode' : ''}`}>
       <label className="file-upload-label">
         {isProcessing ? (
-          `Processing ${fileName}...`
+          <>
+            <span>Processing {fileName}... {progress}%</span>
+            <div className="progress-bar">
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </>
         ) : (
           <>
             <span>Upload Word Document</span>
@@ -65,7 +142,10 @@ const WordDocumentReader = ({ onTextExtracted, mode }) => {
         )}
       </label>
       <div className="file-upload-info">
-        Supports .doc and .docx files
+        Supports .doc and .docx files (non-protected)
+        <div className="file-upload-tip">
+          Note: Password-protected documents cannot be imported
+        </div>
       </div>
     </div>
   );

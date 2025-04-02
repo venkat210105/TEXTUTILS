@@ -2,7 +2,6 @@ import './App.css';
 import Alert from './components/Alert';
 import Navbar from './components/Navbar';
 import TextForm from './components/TextForm';
-import AboutUs from './components/AboutUs';
 import React, { useState } from 'react';
 
 function App() {
@@ -10,35 +9,32 @@ function App() {
   const [alert, setAlert] = useState(null);
 
   const toggleMode = () => {
-    if (mode === 'light') {
-      setMode('dark');
-      document.body.style.backgroundColor = 'black';
-      showAlert('Dark mode is enabled', 'success');
-    } else {
-      setMode('light');
-      document.body.style.backgroundColor = 'white';
-      showAlert('Light mode is enabled', 'success');
-    }
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    document.body.style.backgroundColor = newMode === 'dark' ? '#212529' : 'white';
+    showAlert(`${newMode === 'dark' ? 'Dark' : 'Light'} mode enabled`, 'success');
   };
 
   const showAlert = (msg, type) => {
-    setAlert({
-      msg: msg,
-      type: type
-    });
-    setTimeout(() => {
-      setAlert(null);
-    }, 1500);
+    setAlert({ msg, type });
+    setTimeout(() => setAlert(null), 3000);
   };
 
   return (
     <>
-      <Navbar title="NavText" about="About us" mode={mode} toggleMode={toggleMode} />
+      <Navbar 
+        title="TextUtils" 
+        aboutText="About" 
+        mode={mode} 
+        toggleMode={toggleMode} 
+      />
       <Alert alert={alert} />
-      <div className="container my-3">
-        {/* You can choose which component to render here */}
-        <TextForm heading="Enter text to analyze" mode={mode} />
-        {/* <AboutUs /> */}
+      <div className="container my-4">
+        <TextForm 
+          heading="Try TextUtils - Word Counter, Character Counter" 
+          mode={mode}
+          showAlert={showAlert}
+        />
       </div>
     </>
   );
